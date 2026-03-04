@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+motor
+pymongo
+pydantic[email]
+pydantic-settings
+python-jose[cryptography]
+bcrypt
+python-dotenv
+httpx
+google-genai
+python-multipart
