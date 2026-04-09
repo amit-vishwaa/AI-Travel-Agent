@@ -48,6 +48,9 @@ async def search_places(query: str, size: int = 8) -> list[dict]:
 
 async def geocode_place(place: str) -> dict:
     """Convert a place name to lat/lon coordinates."""
+    if not settings.OPENROUTESERVICE_API_KEY:
+        return None
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             f"{ORS_BASE}/geocode/search",
@@ -62,8 +65,10 @@ async def geocode_place(place: str) -> dict:
 
     feature = data["features"][0]
     coords = feature["geometry"]["coordinates"]  # [lon, lat]
+    props = feature.get("properties", {})
     return {
-        "name": feature["properties"].get("label", place),
+        "name": props.get("label", place),
+        "country": props.get("country"),
         "lon": coords[0],
         "lat": coords[1]
     }

@@ -1,10 +1,17 @@
 """
-Authentication routes: register, login, get current user.
+Authentication routes: register, login, reset password, get current user.
 """
 from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import timedelta
 from bson import ObjectId
-from app.models.user import UserCreate, UserLogin, TokenResponse, UserResponse
+from app.models.user import (
+    ForgotPasswordRequest,
+    MessageResponse,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+)
 from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.config.database import get_database
 from app.config.settings import settings
@@ -77,6 +84,31 @@ async def login(credentials: UserLogin):
             email=user["email"],
             created_at=user["created_at"]
         )
+    )
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(payload: ForgotPasswordRequest):
+    """
+    Demo password reset flow.
+
+    In production, replace this with an email or OTP-based token flow.
+    """
+    db = get_database()
+    user = await db["users"].find_one({"email": payload.email})
+
+    if user:
+        await db["users"].update_one(
+            {"_id": user["_id"]},
+            {
+                "$set": {
+                    "hashed_password": hash_password(payload.new_password),
+                    "password_updated_at": datetime.utcnow(),
+                }
+            },
+        )
+
+    return MessageResponse(
+        message="If an account exists for that email, the password has been updated."
     )
 
 @router.get("/me", response_model=UserResponse)

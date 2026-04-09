@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react'
+
 import { aiService } from '../../services/tripService'
-import { MessageCircle, Send, Bot, User, X, Sparkles } from 'lucide-react'
 
 export default function ChatBot({ tripContext = null }) {
   const navigate = useNavigate()
@@ -15,8 +16,8 @@ export default function ChatBot({ tripContext = null }) {
     setMessages([
       {
         role: 'assistant',
-        content: `Hi! Ask me anything about ${tripContext?.destination || 'your trip'}: itinerary, food, budget, safety, or packing.`,
-      }
+        content: `Hi! I am your local travel assistant. Ask about ${tripContext?.destination || 'your trip'} and I will help with practical guidance.`,
+      },
     ])
   }, [tripContext?.destination])
 
@@ -27,14 +28,15 @@ export default function ChatBot({ tripContext = null }) {
   const sendMessage = async () => {
     if (!input.trim() || loading) return
     const userMsg = input.trim()
+    const nextMessages = [...messages, { role: 'user', content: userMsg }]
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }])
+    setMessages(nextMessages)
     setLoading(true)
     try {
-      const res = await aiService.chat(userMsg, tripContext)
+      const res = await aiService.chat(userMsg, tripContext, nextMessages)
       setMessages(prev => [...prev, { role: 'assistant', content: res?.data?.response || 'No response received.' }])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Chat service is temporarily unavailable. Please try again.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Local assistant is temporarily unavailable. Please try again.' }])
     } finally {
       setLoading(false)
     }
@@ -52,11 +54,11 @@ export default function ChatBot({ tripContext = null }) {
 
       {open && (
         <div className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col z-50 max-h-[70vh]">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-primary-600 rounded-t-2xl">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-slate-950 rounded-t-2xl">
             <div className="flex items-center gap-2 text-white">
               <Bot className="w-5 h-5" />
-              <span className="font-semibold text-sm">AI Travel Assistant</span>
-              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+              <span className="font-semibold text-sm">Offline Travel Assistant</span>
+              <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
             </div>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white">
               <X className="w-4 h-4" />
@@ -95,7 +97,7 @@ export default function ChatBot({ tripContext = null }) {
                   <Bot className="w-4 h-4 text-gray-600" />
                 </div>
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-tl-none px-3.5 py-3 text-sm text-gray-600 dark:text-gray-300">
-                  Thinking...
+                  Thinking locally...
                 </div>
               </div>
             )}

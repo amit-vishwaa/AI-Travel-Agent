@@ -1,15 +1,31 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ChevronDown, LayoutDashboard, LogOut, Map, Menu, Moon, Settings2, Sparkles, Sun, X } from 'lucide-react'
+
+import AeroMindLogo from '../branding/AeroMindLogo'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { Plane, Sun, Moon, Menu, X, LogOut, Map, LayoutDashboard, Sparkles } from 'lucide-react'
-import { useState } from 'react'
+import { useTravelSettings } from '../../context/TravelSettingsContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { isDark, toggle } = useTheme()
+  const {
+    selectedCountry,
+    currency,
+    countryOptions,
+    updateCountry,
+    setCurrency,
+    aiProvider,
+    aiModel,
+    aiProviderOptions,
+    updateAiProvider,
+  } = useTravelSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsRef = useRef(null)
 
   const handleLogout = () => {
     logout()
@@ -18,65 +34,145 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path
 
-  return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
-            <Plane className="w-6 h-6" />
-            <span>AI Travel Agent</span>
-          </Link>
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setSettingsOpen(false)
+      }
+    }
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-2">
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/88 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/88">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div ref={settingsRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(prev => !prev)}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200"
+              >
+                <Settings2 className="h-4 w-4" />
+                <span className="hidden lg:inline">{selectedCountry.label}</span>
+                <span className="lg:hidden">{selectedCountry.code}</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+
+              {settingsOpen && (
+                <div className="absolute left-0 top-14 z-50 w-72 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/95">
+                  <p className="mb-3 text-xs uppercase tracking-[0.2em] text-slate-400">Travel Settings</p>
+                  <label className="label">Region / Country</label>
+                  <select
+                    className="input-field mb-4"
+                    value={selectedCountry.code}
+                    onChange={(e) => updateCountry(e.target.value)}
+                  >
+                    {countryOptions.map(option => (
+                      <option key={option.code} value={option.code}>
+                        {option.label} - {option.region}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label className="label">Currency</label>
+                  <select
+                    className="input-field"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                  >
+                    {[...new Set(countryOptions.map(option => option.currency))].map(option => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <Link to="/" className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
+              <AeroMindLogo className="h-10 w-10" withWordmark={false} />
+              <div className="hidden sm:block">
+                <div className="font-['Space_Grotesk'] text-[1.35rem] font-bold leading-none text-slate-900 dark:text-white">
+                  AI Travel Agent
+                </div>
+                <div className="mt-1 text-[0.72rem] uppercase tracking-[0.34em] text-slate-500 dark:text-slate-400">
+                  Travel Planner
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          <div className="hidden items-center gap-2 md:flex">
+            <div className="mr-2 flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-1.5 py-1 dark:border-white/10 dark:bg-white/5">
+              <select
+                aria-label="AI provider"
+                value={aiProvider}
+                onChange={(e) => updateAiProvider(e.target.value)}
+                className="rounded-full bg-transparent px-2 py-0.5 text-xs font-semibold text-slate-700 outline-none dark:text-slate-200"
+              >
+                {aiProviderOptions.map(option => (
+                  <option key={option.value} value={option.value} className={isDark ? 'bg-slate-900' : 'bg-white'}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">
+                {aiModel}
+              </span>
+            </div>
+
             {user ? (
               <>
                 <Link
                   to="/dashboard"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     isActive('/dashboard')
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'border border-sky-200 bg-sky-50 text-sky-700 dark:border-cyan-500/30 dark:bg-white/10 dark:text-cyan-200'
+                      : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200'
                   }`}
                 >
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                  <LayoutDashboard className="h-4 w-4" /> Dashboard
                 </Link>
                 <Link
                   to="/plan"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     isActive('/plan')
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'border border-sky-200 bg-sky-50 text-sky-700 dark:border-cyan-500/30 dark:bg-white/10 dark:text-cyan-200'
+                      : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200'
                   }`}
                 >
-                  <Map className="w-4 h-4" /> Plan Trip
+                  <Map className="h-4 w-4" /> Trips
                 </Link>
                 <Link
                   to="/assistant"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     isActive('/assistant')
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'border border-sky-200 bg-sky-50 text-sky-700 dark:border-cyan-500/30 dark:bg-white/10 dark:text-cyan-200'
+                      : 'border border-slate-200 bg-white/80 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4" /> AI Assistant
+                  <Sparkles className="h-4 w-4" /> Assistant
                 </Link>
-                <div className="flex items-center gap-1 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 px-2">
+                <div className="ml-2 flex items-center gap-1 border-l border-slate-200 pl-2 dark:border-gray-800">
+                  <span className="px-2 text-sm font-semibold text-slate-600 dark:text-slate-400">
                     Hi, {user.name?.split(' ')[0]}
                   </span>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
-                    <LogOut className="w-4 h-4" /> Logout
+                    <LogOut className="h-4 w-4" /> Logout
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary-600 transition-colors">
+                <Link to="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-sky-700 transition hover:text-sky-800 dark:text-cyan-300 dark:hover:text-cyan-200">
                   Login
                 </Link>
                 <Link to="/register" className="btn-primary text-sm">
@@ -84,41 +180,78 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-            <button
-              onClick={toggle}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+
+            <button onClick={toggle} className="rounded-full border border-slate-200 bg-white/80 p-2 text-slate-500 transition hover:border-sky-200 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200" aria-label="Toggle theme">
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button onClick={toggle} className="p-2 rounded-lg text-gray-500">
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <div className="flex items-center gap-2 md:hidden">
+            <button onClick={toggle} className="rounded-full border border-slate-200 bg-white/80 p-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-lg text-gray-500">
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <button onClick={() => setMenuOpen(!menuOpen)} className="rounded-full border border-slate-200 bg-white/80 p-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 space-y-1">
+        <div className="space-y-1 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/95 md:hidden">
+          <div className="mb-3 rounded-[1.25rem] border border-slate-200 p-3 dark:border-gray-800">
+            <label className="label">Region / Country</label>
+            <select className="input-field mb-3" value={selectedCountry.code} onChange={(e) => updateCountry(e.target.value)}>
+              {countryOptions.map(option => (
+                <option key={option.code} value={option.code}>
+                  {option.label} - {option.region}
+                </option>
+              ))}
+            </select>
+
+            <label className="label">Currency</label>
+            <select className="input-field" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              {[...new Set(countryOptions.map(option => option.currency))].map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <label className="label mt-3">AI Provider</label>
+            <select className="input-field" value={aiProvider} onChange={(e) => updateAiProvider(e.target.value)}>
+              {aiProviderOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Current model: {aiModel}</p>
+          </div>
+
           {user ? (
             <>
-              <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Dashboard</Link>
-              <Link to="/plan" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Plan Trip</Link>
-              <Link to="/assistant" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">AI Assistant</Link>
-              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="block w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">Logout</button>
+              <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-gray-800">
+                Dashboard
+              </Link>
+              <Link to="/plan" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-gray-800">
+                Trips
+              </Link>
+              <Link to="/assistant" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-gray-800">
+                Assistant
+              </Link>
+              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50">
+                Logout
+              </button>
             </>
           ) : (
             <>
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">Login</Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-primary-600">Register</Link>
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Login
+              </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-primary-600">
+                Register
+              </Link>
             </>
           )}
         </div>

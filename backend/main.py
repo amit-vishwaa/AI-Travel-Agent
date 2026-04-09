@@ -17,8 +17,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="AI Travel Agent API",
-    description="A full-stack AI-powered travel planning application",
-    version="1.0.0",
+    description="Production-grade AI travel assistant with multi-model routing",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -41,9 +41,9 @@ app.include_router(routing.router, prefix="/api")
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"message": "AI Travel Agent API is running!", "version": "1.0.0", "status": "healthy"}
+    return {"message": "AI Travel Agent API is running!", "version": "2.0.0", "status": "healthy"}
 
 @app.get("/api/health")
 async def health_check():
     """Detailed health check."""
-    return {"status": "ok", "api": "AI Travel Agent", "version": "1.0.0"}
+    return {"status": "ok", "api": "AI Travel Agent", "version": "2.0.0"}

@@ -5,6 +5,11 @@ export const tripService = {
   getTrips: () => api.get('/trips/'),
   getTrip: (id) => api.get(`/trips/${id}`),
   updateTrip: (id, data) => api.put(`/trips/${id}`, data),
+  updatePackingList: (id, data) => api.put(`/trips/${id}/packing-list`, data),
+  regenerateTrip: (id) => api.post(`/trips/${id}/regenerate`, {}, { timeout: 180000 }),
+  regeneratePackingList: (id) => api.post(`/trips/${id}/packing-list/regenerate`),
+  getTripFlights: (id) => api.get(`/trips/${id}/flights`, { timeout: 60000 }),
+  downloadPdf: (id) => api.get(`/trips/${id}/generate-pdf`, { responseType: 'blob' }),
   deleteTrip: (id) => api.delete(`/trips/${id}`),
 }
 
@@ -21,6 +26,6 @@ export const routeService = {
 }
 
 export const aiService = {
-  chat: (message, tripContext = null) =>
-    api.post('/ai/chat', { message, trip_context: tripContext }),
+  chat: (message, tripContext = null, history = []) =>
+    api.post('/ai/chat', { message, trip_context: tripContext, history }),
 }

@@ -10,3 +10,4 @@ python-dotenv
 httpx
 google-genai
 python-multipart
+reportlab

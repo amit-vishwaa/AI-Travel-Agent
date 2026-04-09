@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Plane, User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+import AeroMindLogo from '../components/branding/AeroMindLogo'
+import { useAuth } from '../context/AuthContext'
 
 export default function RegisterPage() {
   const { user, loading: authLoading, register } = useAuth()
@@ -24,7 +26,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(form.name, form.email, form.password)
-      toast.success('Account created! Welcome aboard 🎉')
+      toast.success('Account created!')
       navigate('/dashboard')
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Registration failed. Try again.')
@@ -34,60 +36,100 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg">
-            <Plane className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Your Account</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Start planning AI-powered trips for free</p>
+    <div className="page-shell flex items-center justify-center px-4 py-12">
+      <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-slate-900 via-sky-900 to-cyan-700 p-10 text-white shadow-[0_24px_80px_rgba(15,23,42,0.26)] lg:block">
+          <AeroMindLogo className="h-14 w-14" withWordmark={false} />
+          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-cyan-200">Create Account</p>
+          <h1 className="mt-3 text-4xl font-bold leading-tight">Start building trips that feel product-ready.</h1>
+          <p className="mt-4 text-lg leading-8 text-slate-200">
+            Create an account to generate itineraries, smart packing lists, budgets, PDFs, and weather-aware alerts from one travel workspace.
+          </p>
         </div>
 
-        <div className="card shadow-xl">
+        <div className="glass-panel w-full max-w-xl justify-self-center">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <AeroMindLogo className="h-16 w-16" />
+            <h1 className="mt-5 text-3xl font-bold text-slate-900 dark:text-white">Create Your Account</h1>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">Start planning multi-AI trips for free</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Full Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input type="text" className="input-field pl-10" placeholder="John Doe"
-                  value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required minLength={2} />
+                <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  className="input-field pl-10"
+                  placeholder="John Doe"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  required
+                  minLength={2}
+                />
               </div>
             </div>
+
             <div>
               <label className="label">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input type="email" className="input-field pl-10" placeholder="you@example.com"
-                  value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="email"
+                  className="input-field pl-10"
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  required
+                />
               </div>
             </div>
+
             <div>
               <label className="label">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input type={showPwd ? 'text' : 'password'} className="input-field pl-10 pr-10" placeholder="Min. 6 characters"
-                  value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} />
-                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-3.5 text-gray-400">
-                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <input
+                  type={showPwd ? 'text' : 'password'}
+                  className="input-field pl-10 pr-10"
+                  placeholder="Min. 6 characters"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                  {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
+
             <div>
               <label className="label">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input type="password" className="input-field pl-10" placeholder="Re-enter password"
-                  value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} required />
+                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="password"
+                  className="input-field pl-10"
+                  placeholder="Re-enter password"
+                  value={form.confirm}
+                  onChange={e => setForm({ ...form, confirm: e.target.value })}
+                  required
+                />
               </div>
             </div>
-            <button type="submit" className="btn-primary w-full mt-2" disabled={loading}>
+
+            <button type="submit" className="btn-primary w-full" disabled={loading}>
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary-600 font-semibold hover:underline">Sign in</Link>
+            <Link to="/login" className="font-semibold text-primary-600 hover:underline">
+              Sign in
+            </Link>
           </p>
         </div>
       </div>

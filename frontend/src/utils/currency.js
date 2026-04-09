@@ -27,3 +27,12 @@ export function summarizeBudgetsByCurrency(trips = []) {
     .map(([currency, total]) => formatCurrency(total, currency))
     .join(' + ')
 }
+
+export function sumBudgetsForCurrency(trips = [], currency = 'USD') {
+  const selected = (currency || 'USD').toUpperCase()
+  return trips.reduce((sum, trip) => {
+    if ((trip?.currency || '').toUpperCase() !== selected) return sum
+    const amount = Number(trip?.budget || 0)
+    return Number.isFinite(amount) ? sum + amount : sum
+  }, 0)
+}
