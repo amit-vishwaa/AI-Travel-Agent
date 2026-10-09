@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import AeroMindLogo from '../components/branding/AeroMindLogo'
 import { useAuth } from '../context/AuthContext'
+import { stashAssistantPrompt, takeAssistantPrompt } from '../utils/assistant'
 
 export default function LoginPage() {
   const { user, loading: authLoading, login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -23,7 +25,18 @@ export default function LoginPage() {
     try {
       await login(form.email, form.password)
       toast.success('Welcome back!')
-      navigate('/dashboard')
+      const prompt = location.state?.prompt || takeAssistantPrompt()
+      const from = location.state?.from
+      if (prompt) {
+        stashAssistantPrompt(prompt)
+        navigate('/assistant', { replace: true, state: { prompt } })
+        return
+      }
+      if (from?.pathname && from.pathname !== '/login') {
+        navigate(from.pathname + (from.search || ''), { replace: true, state: from.state })
+        return
+      }
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed. Check your credentials.')
     } finally {
@@ -34,7 +47,7 @@ export default function LoginPage() {
   return (
     <div className="page-shell flex items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-sky-600 via-cyan-600 to-emerald-500 p-10 text-white shadow-[0_24px_80px_rgba(14,165,233,0.25)] lg:block">
+        <div className="hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-sky-600 via-cyan-600 to-emerald-500 p-10 text-white shadow-[0_24px_80px_rgba(14,165,233,0.25)] dark:border-slate-700/70 dark:from-slate-900 dark:via-cyan-950 dark:to-slate-900 dark:shadow-[0_24px_80px_rgba(0,0,0,0.3)] lg:block">
           <AeroMindLogo className="h-14 w-14" withWordmark={false} />
           <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-cyan-100">Sign In</p>
           <h1 className="mt-3 text-4xl font-bold leading-tight">Return to your travel planning workspace.</h1>
@@ -45,6 +58,9 @@ export default function LoginPage() {
 
         <div className="glass-panel w-full max-w-xl justify-self-center">
           <div className="mb-8 flex flex-col items-center text-center">
+            <Link to="/" className="mb-2 text-sm font-semibold text-sky-700 hover:underline dark:text-cyan-300">
+              Back to home
+            </Link>
             <AeroMindLogo className="h-16 w-16" />
             <h1 className="mt-5 text-3xl font-bold text-slate-900 dark:text-white">Welcome Back</h1>
             <p className="mt-2 text-slate-500 dark:text-slate-400">Sign in to continue planning weather-aware trips</p>

@@ -3,8 +3,11 @@ import { useLocation } from 'react-router-dom'
 import { Bot, MapPin, RefreshCw, Send, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+import MessageBody from '../components/common/MessageBody'
 import { useAuth } from '../context/AuthContext'
+import { useTravelSettings } from '../context/TravelSettingsContext'
 import { aiService, tripService } from '../services/tripService'
+import { compactTripContext, takeAssistantPrompt } from '../utils/assistant'
 
 function buildQuickPrompts(trip) {
   const destination = trip?.destination || 'my destination'
@@ -19,6 +22,7 @@ function buildQuickPrompts(trip) {
 
 export default function AssistantPage() {
   const { user } = useAuth()
+  const { aiProvider } = useTravelSettings()
   const location = useLocation()
   const [trips, setTrips] = useState([])
   const [selectedTripId, setSelectedTripId] = useState('')
@@ -27,6 +31,7 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
   const lastHandledPromptRef = useRef('')
+  const pendingPromptRef = useRef(location.state?.prompt || '')
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -34,7 +39,14 @@ export default function AssistantPage() {
         const res = await tripService.getTrips()
         const list = res.data || []
         setTrips(list)
-        if (list.length) setSelectedTripId(list[0].id)
+        const incomingTripId = location.state?.tripId
+        const incomingPrompt = location.state?.prompt
+        if (incomingTripId && list.some(trip => trip.id === incomingTripId)) {
+          setSelectedTripId(incomingTripId)
+        } else if (!incomingPrompt) {
+          const saved = localStorage.getItem('assistant_trip_id')
+          if (saved && list.some(trip => trip.id === saved)) setSelectedTripId(saved)
+        }
       } catch {
         toast.error('Could not load your trips for context')
       }
@@ -53,7 +65,7 @@ export default function AssistantPage() {
     setMessages([
       {
         role: 'assistant',
-        content: `Hi ${user?.name?.split(' ')[0] || 'there'}, I am your offline travel copilot. Pick a trip context or ask anything to start.`,
+        content: `Hi ${user?.name?.split(' ')[0] || 'there'}, I am your travel copilot. Pick a trip for context or ask anything to start.`,
       },
     ])
   }, [user?.name])
@@ -72,13 +84,13 @@ export default function AssistantPage() {
     setLoading(true)
 
     try {
-      const res = await aiService.chat(userText, selectedTrip, nextMessages)
+      const res = await aiService.chat(userText, compactTripContext(selectedTrip), nextMessages)
       const reply = res?.data?.response || 'I could not generate a response right now.'
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: err.response?.data?.detail || 'I could not reach the local assistant right now. Please try again in a moment.',
+        content: err.response?.data?.detail || 'I could not reach the assistant right now. Please try again in a moment.',
       }])
     } finally {
       setLoading(false)
@@ -95,9 +107,20 @@ export default function AssistantPage() {
   }
 
   useEffect(() => {
-    const prompt = location.state?.prompt?.trim()
+    if (!pendingPromptRef.current) {
+      pendingPromptRef.current = takeAssistantPrompt()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedTripId) localStorage.setItem('assistant_trip_id', selectedTripId)
+  }, [selectedTripId])
+
+  useEffect(() => {
+    const prompt = String(pendingPromptRef.current || location.state?.prompt || '').trim()
     if (!prompt || lastHandledPromptRef.current === prompt || loading || messages.length === 0) return
     lastHandledPromptRef.current = prompt
+    pendingPromptRef.current = ''
     sendMessage(prompt)
     window.history.replaceState({ ...(window.history.state || {}), usr: {} }, document.title)
   }, [location.state, loading, messages.length])
@@ -113,11 +136,11 @@ export default function AssistantPage() {
                 <Sparkles className="h-7 w-7 text-sky-600 dark:text-cyan-300" /> AI Travel Agent Assistant
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
-                Local-only travel guidance powered by Ollama, with optional trip context from your saved plans.
+                Practical travel guidance for itineraries, budgets, packing, and weather — using your selected AI provider.
               </p>
             </div>
             <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-cyan-200">
-              Chat history stays in this browser session.
+              Provider: {aiProvider === 'gemini' ? 'Gemini' : 'Ollama'} · Chat stays in this session.
             </div>
           </div>
         </section>
@@ -192,7 +215,7 @@ export default function AssistantPage() {
                           : 'rounded-bl-none border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-200'
                       }`}
                     >
-                      {msg.content}
+                      <MessageBody text={msg.content} />
                     </div>
                   </div>
                 ))}
@@ -200,7 +223,7 @@ export default function AssistantPage() {
                 {loading && (
                   <div className="flex justify-start">
                     <div className="max-w-[88%] rounded-2xl rounded-bl-none border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-200">
-                      Thinking locally...
+                      Thinking...
                     </div>
                   </div>
                 )}
@@ -216,7 +239,12 @@ export default function AssistantPage() {
                   placeholder="Ask about itinerary, budget, safety, packing, food..."
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      sendMessage()
+                    }
+                  }}
                 />
                 <button
                   onClick={() => sendMessage()}

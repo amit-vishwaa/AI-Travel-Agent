@@ -21,7 +21,7 @@ export default function MapView({ routeData }) {
     return (
       <div className="card">
         <div className="h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-xl">
-          <p className="text-gray-400 text-sm">Map data unavailable</p>
+          <p className="text-gray-400 dark:text-slate-400 text-sm">Map data unavailable</p>
         </div>
       </div>
     )
@@ -44,7 +44,7 @@ export default function MapView({ routeData }) {
       <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
         🗺️ Route Map
         {distance_km && (
-          <span className="text-sm text-gray-400 font-normal ml-auto">
+          <span className="text-sm text-gray-400 dark:text-slate-400 font-normal ml-auto">
             {distance_km} km · ~{Math.round(duration_hours)}h drive
           </span>
         )}
@@ -65,7 +65,7 @@ export default function MapView({ routeData }) {
         </MapContainer>
       </div>
       {!route_available && (
-        <p className="text-xs text-gray-400 text-center mt-2">
+        <p className="text-xs text-gray-400 dark:text-slate-400 text-center mt-2">
           Detailed routing not available for this distance — showing direct line
         </p>
       )}

@@ -296,6 +296,53 @@ async def generate_trip_pdf(trip_id: str, current_user: dict = Depends(get_curre
     )
 
 
+@router.get("/public/{trip_id}")
+async def get_public_trip(trip_id: str):
+    """Retrieve trip details for shared public view without requiring authentication."""
+    db = get_database()
+    try:
+        doc = await db["trips"].find_one({"_id": ObjectId(trip_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid trip ID")
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    hydrated = await hydrate_trip_doc(doc, db)
+    resp = trip_doc_to_response(hydrated)
+    resp.pop("user_id", None)
+    return resp
+
+
+@router.get("/{trip_id}/calendar")
+async def export_trip_calendar(trip_id: str):
+    """Generate and download an iCalendar (.ics) file for the trip."""
+    from app.services.calendar_service import build_trip_ical
+
+    db = get_database()
+    try:
+        doc = await db["trips"].find_one({"_id": ObjectId(trip_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid trip ID")
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    hydrated = await hydrate_trip_doc(doc, db)
+    trip = trip_doc_to_response(hydrated)
+    try:
+        ics_bytes = build_trip_ical(trip)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Calendar export failed: {str(exc)}")
+
+    filename = f"trip-{trip.get('destination', 'itinerary').replace(' ', '-').lower()}.ics"
+    return Response(
+        content=ics_bytes,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.delete("/{trip_id}")
 async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
     db = get_database()

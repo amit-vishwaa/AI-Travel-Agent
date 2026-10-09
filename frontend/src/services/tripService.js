@@ -4,12 +4,14 @@ export const tripService = {
   createTrip: (data) => api.post('/trips/', data, { timeout: 180000 }),
   getTrips: () => api.get('/trips/'),
   getTrip: (id) => api.get(`/trips/${id}`),
+  getPublicTrip: (id) => api.get(`/trips/public/${id}`),
   updateTrip: (id, data) => api.put(`/trips/${id}`, data),
   updatePackingList: (id, data) => api.put(`/trips/${id}/packing-list`, data),
   regenerateTrip: (id) => api.post(`/trips/${id}/regenerate`, {}, { timeout: 180000 }),
   regeneratePackingList: (id) => api.post(`/trips/${id}/packing-list/regenerate`),
   getTripFlights: (id) => api.get(`/trips/${id}/flights`, { timeout: 60000 }),
   downloadPdf: (id) => api.get(`/trips/${id}/generate-pdf`, { responseType: 'blob' }),
+  downloadCalendar: (id) => api.get(`/trips/${id}/calendar`, { responseType: 'blob' }),
   deleteTrip: (id) => api.delete(`/trips/${id}`),
 }
 

@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, MapPinned, Plane, Wallet } from 'lucide-react'
+import { ArrowLeftRight, Loader2, MapPinned, Plane, Sparkles, Users, Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+import CityAutocomplete from '../components/common/CityAutocomplete'
 import { useTheme } from '../context/ThemeContext'
 import { useTravelSettings } from '../context/TravelSettingsContext'
-import { routeService, tripService } from '../services/tripService'
+import { tripService } from '../services/tripService'
 
 const travelStyles = ['budget', 'balanced', 'luxury']
 const currencyOptions = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'JPY', 'AUD', 'CAD', 'SGD']
 const interestOptions = ['History & Culture', 'Adventure & Sports', 'Food & Cuisine', 'Nature & Wildlife', 'Art & Museums', 'Beaches', 'Nightlife', 'Shopping', 'Photography', 'Spirituality']
+
 const budgetRanges = {
   INR: { min: 15000, max: 600000, step: 5000, presets: [40000, 90000, 180000] },
   USD: { min: 300, max: 12000, step: 100, presets: [1200, 2800, 5200] },
@@ -21,6 +23,76 @@ const budgetRanges = {
   CAD: { min: 500, max: 15000, step: 100, presets: [1600, 3500, 6500] },
   SGD: { min: 450, max: 14000, step: 100, presets: [1400, 3000, 5600] },
 }
+
+const tripInspirations = [
+  {
+    title: '🏝️ Tropical Bali Escape',
+    origin: 'Singapore',
+    destination: 'Bali, Indonesia',
+    days: 5,
+    style: 'balanced',
+    travelers: 2,
+    interests: ['Nature & Wildlife', 'Food & Cuisine', 'Beaches', 'Photography'],
+    budgetByCurrency: { USD: 1400, INR: 95000, EUR: 1300, GBP: 1100, AED: 5200, JPY: 210000, AUD: 2100, CAD: 1900, SGD: 1900 },
+    notes: 'Relaxing beach getaway with temple visits, scenic rice terraces, and sunset seafood.',
+  },
+  {
+    title: '⛩️ Historic & Tech Tokyo',
+    origin: 'Seoul',
+    destination: 'Tokyo, Japan',
+    days: 6,
+    style: 'balanced',
+    travelers: 1,
+    interests: ['History & Culture', 'Food & Cuisine', 'Shopping', 'Photography'],
+    budgetByCurrency: { USD: 2200, INR: 160000, EUR: 2000, GBP: 1700, AED: 8000, JPY: 320000, AUD: 3200, CAD: 2900, SGD: 2900 },
+    notes: 'Explore Shibuya, Senso-ji, Akihabara gadgets, and ramen alleys with bullet train transit.',
+  },
+  {
+    title: '🏛️ Romantic Rome & Florence',
+    origin: 'London',
+    destination: 'Rome, Italy',
+    days: 5,
+    style: 'balanced',
+    travelers: 2,
+    interests: ['History & Culture', 'Art & Museums', 'Food & Cuisine'],
+    budgetByCurrency: { USD: 1800, INR: 140000, EUR: 1600, GBP: 1400, AED: 6600, JPY: 270000, AUD: 2700, CAD: 2400, SGD: 2400 },
+    notes: 'Colosseum, Vatican museum tour, authentic Italian espresso, and Renaissance architecture.',
+  },
+  {
+    title: '✨ Luxury & Modern Dubai',
+    origin: 'Mumbai',
+    destination: 'Dubai, UAE',
+    days: 4,
+    style: 'luxury',
+    travelers: 2,
+    interests: ['Shopping', 'Nightlife', 'Adventure & Sports'],
+    budgetByCurrency: { USD: 2600, INR: 210000, EUR: 2400, GBP: 2100, AED: 9500, JPY: 390000, AUD: 3900, CAD: 3500, SGD: 3500 },
+    notes: 'Burj Khalifa observation deck, desert safari with BBQ, luxury marina cruise, and souk shopping.',
+  },
+  {
+    title: '🏔️ Swiss Alps Adventure',
+    origin: 'Paris',
+    destination: 'Interlaken, Switzerland',
+    days: 5,
+    style: 'balanced',
+    travelers: 2,
+    interests: ['Nature & Wildlife', 'Adventure & Sports', 'Photography'],
+    budgetByCurrency: { USD: 2500, INR: 190000, EUR: 2300, GBP: 2000, AED: 9200, JPY: 370000, AUD: 3700, CAD: 3300, SGD: 3300 },
+    notes: 'Jungfrau train journey, panoramic cable car views, Lake Brienz cruise, and cheese tasting.',
+  },
+  {
+    title: '🌴 Serene Kerala Backwaters',
+    origin: 'Delhi',
+    destination: 'Kochi, Kerala',
+    days: 4,
+    style: 'balanced',
+    travelers: 2,
+    interests: ['Nature & Wildlife', 'Food & Cuisine', 'Spirituality', 'Photography'],
+    budgetByCurrency: { USD: 700, INR: 45000, EUR: 650, GBP: 550, AED: 2600, JPY: 105000, AUD: 1100, CAD: 950, SGD: 950 },
+    notes: 'Alleppey houseboat stay, Kathakali performance, spice plantation tour, and Ayurvedic wellness.',
+  },
+]
+
 const DEFAULT_PLANNING_GUIDANCE = 'Prefer real named places, local highlights, and weather-aware timing where practical.'
 
 function buildSpecialRequirements(base) {
@@ -62,16 +134,6 @@ export default function PlanTripPage() {
   const { isDark } = useTheme()
   const { selectedCountry, currency: selectedCurrency, setCurrency } = useTravelSettings()
   const [loading, setLoading] = useState(false)
-  const [originSuggestions, setOriginSuggestions] = useState([])
-  const [destinationSuggestions, setDestinationSuggestions] = useState([])
-  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false)
-  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false)
-  const originBoxRef = useRef(null)
-  const destinationBoxRef = useRef(null)
-  const originCacheRef = useRef(new Map())
-  const destinationCacheRef = useRef(new Map())
-  const originRequestRef = useRef(0)
-  const destinationRequestRef = useRef(0)
   const [form, setForm] = useState({
     origin: '',
     destination: '',
@@ -88,61 +150,6 @@ export default function PlanTripPage() {
   useEffect(() => {
     setForm(prev => ({ ...prev, currency: selectedCurrency }))
   }, [selectedCurrency])
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (originBoxRef.current && !originBoxRef.current.contains(event.target)) setShowOriginSuggestions(false)
-      if (destinationBoxRef.current && !destinationBoxRef.current.contains(event.target)) setShowDestinationSuggestions(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  useEffect(() => {
-    const query = form.origin.trim()
-    if (query.length < 2) return setOriginSuggestions([])
-    const normalizedQuery = query.toLowerCase()
-    if (originCacheRef.current.has(normalizedQuery)) {
-      setOriginSuggestions(originCacheRef.current.get(normalizedQuery))
-      return
-    }
-    const timer = setTimeout(async () => {
-      const requestId = ++originRequestRef.current
-      try {
-        const res = await routeService.searchCities(query, 8)
-        if (requestId !== originRequestRef.current) return
-        const suggestions = res.data?.suggestions || []
-        originCacheRef.current.set(normalizedQuery, suggestions)
-        setOriginSuggestions(suggestions)
-      } catch {
-        if (requestId === originRequestRef.current) setOriginSuggestions([])
-      }
-    }, 120)
-    return () => clearTimeout(timer)
-  }, [form.origin])
-
-  useEffect(() => {
-    const query = form.destination.trim()
-    if (query.length < 2) return setDestinationSuggestions([])
-    const normalizedQuery = query.toLowerCase()
-    if (destinationCacheRef.current.has(normalizedQuery)) {
-      setDestinationSuggestions(destinationCacheRef.current.get(normalizedQuery))
-      return
-    }
-    const timer = setTimeout(async () => {
-      const requestId = ++destinationRequestRef.current
-      try {
-        const res = await routeService.searchCities(query, 8)
-        if (requestId !== destinationRequestRef.current) return
-        const suggestions = res.data?.suggestions || []
-        destinationCacheRef.current.set(normalizedQuery, suggestions)
-        setDestinationSuggestions(suggestions)
-      } catch {
-        if (requestId === destinationRequestRef.current) setDestinationSuggestions([])
-      }
-    }, 120)
-    return () => clearTimeout(timer)
-  }, [form.destination])
 
   const tripLength = useMemo(() => {
     if (!form.start_date || !form.end_date) return 0
@@ -180,13 +187,43 @@ export default function PlanTripPage() {
 
   const applyBudgetPreset = (value) => setForm(prev => ({ ...prev, budget: String(value) }))
 
+  const applyInspiration = (insp) => {
+    const today = new Date()
+    const startDateObj = new Date(today.getTime() + 25 * 24 * 60 * 60 * 1000)
+    const endDateObj = new Date(startDateObj.getTime() + insp.days * 24 * 60 * 60 * 1000)
+
+    const startDateStr = startDateObj.toISOString().split('T')[0]
+    const endDateStr = endDateObj.toISOString().split('T')[0]
+
+    const selectedCur = form.currency || 'USD'
+    const estBudget = insp.budgetByCurrency[selectedCur] || 1500
+
+    setForm(prev => ({
+      ...prev,
+      origin: insp.origin,
+      destination: insp.destination,
+      start_date: startDateStr,
+      end_date: endDateStr,
+      travel_style: insp.style,
+      travelers: insp.travelers,
+      interests: insp.interests,
+      budget: String(estBudget),
+      special_requirements: insp.notes,
+    }))
+    toast.success(`Loaded "${insp.title}" template!`)
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!form.start_date || !form.end_date) return toast.error('Please select travel dates')
     if (new Date(form.end_date) <= new Date(form.start_date)) return toast.error('End date must be after start date')
+    if (form.origin.trim().toLowerCase() === form.destination.trim().toLowerCase()) {
+      return toast.error('Origin and destination should be different')
+    }
+    if (tripLength > 21) return toast.error('Please keep trip length at 21 days or fewer for the best plans')
 
     setLoading(true)
-    toast.loading('Designing your trip plan...', { id: 'planning', duration: 60000 })
+    toast.loading('Designing your customized trip plan...', { id: 'planning', duration: 60000 })
     try {
       const payload = {
         ...form,
@@ -221,9 +258,9 @@ export default function PlanTripPage() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-600 dark:text-cyan-300">Trip Planner</p>
-                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Plan a trip with fewer steps</h1>
+                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Plan your vacation in minutes</h1>
                 <p className={`mt-3 text-sm leading-7 sm:text-base ${subtleTextClass}`}>
-                  Enter the essentials and the app will generate your itinerary, budget, packing list, and travel risk notes.
+                  Choose a curated inspiration template or enter custom details. AI creates your day-by-day itinerary, live weather notes, and packing list.
                 </p>
               </div>
 
@@ -247,72 +284,58 @@ export default function PlanTripPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6 sm:px-8 sm:py-8">
+            {/* Quick Inspiration Templates */}
+            <div className={isDark ? 'rounded-2xl border border-white/10 bg-white/5 p-4' : 'rounded-2xl border border-sky-200/80 bg-gradient-to-r from-sky-50 to-indigo-50/60 p-4'}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-cyan-300">
+                  <Sparkles className="h-4 w-4 text-sky-600 dark:text-cyan-400" />
+                  Need Inspiration? Click a Dream Getaway
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">1-click pre-fill</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tripInspirations.map(insp => (
+                  <button
+                    key={insp.title}
+                    type="button"
+                    onClick={() => applyInspiration(insp)}
+                    className="rounded-full border border-sky-200/80 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-sky-400 hover:bg-sky-50 dark:border-white/10 dark:bg-slate-850 dark:text-slate-200 dark:hover:bg-white/10"
+                  >
+                    {insp.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Origin & Destination */}
             <section className={sectionClass}>
               <div className="grid gap-4 md:grid-cols-2">
-                <div ref={originBoxRef} className="relative">
-                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Origin city</label>
-                  <input
-                    type="text"
-                    className={inputClass(isDark)}
-                    placeholder="e.g. New York"
-                    required
-                    value={form.origin}
-                    onFocus={() => setShowOriginSuggestions(true)}
-                    onChange={event => {
-                      setForm(prev => ({ ...prev, origin: event.target.value }))
-                      setShowOriginSuggestions(true)
-                    }}
-                  />
-                  {showOriginSuggestions && originSuggestions.length > 0 && (
-                    <div className={isDark ? 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-white/10 bg-slate-900 p-2 shadow-2xl' : 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl'}>
-                      {originSuggestions.map((suggestion, index) => (
-                        <button
-                          key={`${suggestion.label}-${index}`}
-                          type="button"
-                          className={isDark ? 'w-full rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10' : 'w-full rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100'}
-                          onClick={() => {
-                            setForm(prev => ({ ...prev, origin: suggestion.label }))
-                            setShowOriginSuggestions(false)
-                          }}
-                        >
-                          {suggestion.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div ref={destinationBoxRef} className="relative">
-                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Destination</label>
-                  <input
-                    type="text"
-                    className={inputClass(isDark)}
-                    placeholder="e.g. Paris, France"
-                    required
-                    value={form.destination}
-                    onFocus={() => setShowDestinationSuggestions(true)}
-                    onChange={event => {
-                      setForm(prev => ({ ...prev, destination: event.target.value }))
-                      setShowDestinationSuggestions(true)
-                    }}
-                  />
-                  {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-                    <div className={isDark ? 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-white/10 bg-slate-900 p-2 shadow-2xl' : 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl'}>
-                      {destinationSuggestions.map((suggestion, index) => (
-                        <button
-                          key={`${suggestion.label}-${index}`}
-                          type="button"
-                          className={isDark ? 'w-full rounded-xl px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10' : 'w-full rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100'}
-                          onClick={() => {
-                            setForm(prev => ({ ...prev, destination: suggestion.label }))
-                            setShowDestinationSuggestions(false)
-                          }}
-                        >
-                          {suggestion.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <CityAutocomplete
+                  label="Origin city"
+                  placeholder="e.g. New York, London, Delhi"
+                  required
+                  isDark={isDark}
+                  value={form.origin}
+                  onChange={(origin) => setForm(prev => ({ ...prev, origin }))}
+                />
+                <CityAutocomplete
+                  label="Destination"
+                  placeholder="e.g. Paris, Tokyo, Bali"
+                  required
+                  isDark={isDark}
+                  value={form.destination}
+                  onChange={(destination) => setForm(prev => ({ ...prev, destination }))}
+                />
+                <div className="md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, origin: prev.destination, destination: prev.origin }))}
+                    className={isDark
+                      ? 'inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 hover:bg-white/10'
+                      : 'inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50'}
+                  >
+                    <ArrowLeftRight className="h-4 w-4" /> Swap origin and destination
+                  </button>
                 </div>
 
                 <div>
@@ -340,7 +363,7 @@ export default function PlanTripPage() {
                 </div>
 
                 <div>
-                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Budget</label>
+                  <label className={`mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Total Budget ({form.currency})</label>
                   <input
                     type="number"
                     className={inputClass(isDark)}
@@ -419,8 +442,35 @@ export default function PlanTripPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Traveler Persona Presets */}
+              <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Quick Persona Preset:</span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[
+                    { label: 'Solo Explorer', count: 1, style: 'budget' },
+                    { label: 'Couple / Romantic', count: 2, style: 'balanced' },
+                    { label: 'Family with Kids', count: 4, style: 'balanced' },
+                    { label: 'Friends Group', count: 3, style: 'balanced' },
+                  ].map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, travelers: p.count, travel_style: p.style }))}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                        form.travelers === p.count && form.travel_style === p.style
+                          ? 'bg-sky-600 text-white dark:bg-cyan-400 dark:text-slate-950 shadow-sm'
+                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+                      }`}
+                    >
+                      {p.label} ({p.count})
+                    </button>
+                  ))}
+                </div>
+              </div>
             </section>
 
+            {/* Travel Style and Interests */}
             <section className={sectionClass}>
               <label className={`mb-3 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Travel style</label>
               <div className={isDark ? 'grid grid-cols-3 gap-2 rounded-2xl bg-white/5 p-1' : 'grid grid-cols-3 gap-2 rounded-2xl bg-white p-1'}>
@@ -440,7 +490,7 @@ export default function PlanTripPage() {
                 ))}
               </div>
 
-              <label className={`mt-6 mb-3 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Interests</label>
+              <label className={`mt-6 mb-3 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Interests & Activities</label>
               <div className="flex flex-wrap gap-2">
                 {interestOptions.map(interest => (
                   <button
@@ -448,48 +498,44 @@ export default function PlanTripPage() {
                     type="button"
                     onClick={() => toggleInterest(interest)}
                     className={form.interests.includes(interest)
-                      ? 'rounded-full bg-cyan-400 px-4 py-2 text-sm font-medium text-slate-950'
+                      ? 'rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white dark:bg-cyan-300 dark:text-slate-950'
                       : isDark
-                        ? 'rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10'
-                        : 'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100'}
+                        ? 'rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10'
+                        : 'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100'}
                   >
                     {interest}
                   </button>
                 ))}
               </div>
 
-              <label className={`mt-6 mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Extra notes</label>
+              <label className={`mt-6 mb-2 block text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                Special preferences or notes (optional)
+              </label>
               <textarea
-                className={`${inputClass(isDark)} min-h-[120px]`}
-                rows={5}
-                placeholder="Optional: mention dietary needs, slower pace, must-visit areas, accessibility needs, or activities to avoid."
+                rows={3}
+                className={inputClass(isDark)}
+                placeholder="e.g. Vegetarian dining, avoid strenuous hikes, prefers historical sights..."
                 value={form.special_requirements}
                 onChange={event => setForm(prev => ({ ...prev, special_requirements: event.target.value }))}
               />
             </section>
 
-            <section className="grid gap-4 md:grid-cols-3">
-              <SummaryStat label="Trip length" value={tripLength ? `${tripLength} ${tripLength === 1 ? 'day' : 'days'}` : 'Not set'} isDark={isDark} />
-              <SummaryStat label="Per traveler" value={budgetPerTraveler} isDark={isDark} />
+            {/* Real-time Summary Cards */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <SummaryStat label="Trip duration" value={`${tripLength || 0} day${tripLength === 1 ? '' : 's'}`} isDark={isDark} />
               <SummaryStat label="Daily budget" value={dailyBudget} isDark={isDark} />
-            </section>
+              <SummaryStat label="Per traveler" value={budgetPerTraveler} isDark={isDark} />
+            </div>
 
-            <section className={isDark ? 'flex flex-col gap-4 rounded-3xl border border-white/10 bg-cyan-400/10 p-5 sm:flex-row sm:items-center sm:justify-between' : 'flex flex-col gap-4 rounded-3xl border border-cyan-100 bg-cyan-50 p-5 sm:flex-row sm:items-center sm:justify-between'}>
-              <div>
-                <h2 className="text-xl font-semibold">Generate the trip</h2>
-                <p className={`mt-1 text-sm ${subtleTextClass}`}>
-                  The planner will use your essentials plus a small built-in prompt for named places and weather-aware timing.
-                </p>
-              </div>
-
+            <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
                 disabled={loading}
+                className="btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base shadow-lg"
               >
-                {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Generating plan...</> : <><Plane className="h-4 w-4" />Generate trip plan</>}
+                {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating Your Plan...</> : <><Sparkles className="h-5 w-5" /> Generate AI Itinerary</>}
               </button>
-            </section>
+            </div>
           </form>
         </section>
       </div>

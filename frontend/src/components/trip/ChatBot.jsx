@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react'
 
 import { aiService } from '../../services/tripService'
+import { compactTripContext } from '../../utils/assistant'
+import MessageBody from '../common/MessageBody'
 
 export default function ChatBot({ tripContext = null }) {
   const navigate = useNavigate()
@@ -16,7 +18,7 @@ export default function ChatBot({ tripContext = null }) {
     setMessages([
       {
         role: 'assistant',
-        content: `Hi! I am your local travel assistant. Ask about ${tripContext?.destination || 'your trip'} and I will help with practical guidance.`,
+        content: `Hi! Ask about ${tripContext?.destination || 'your trip'} and I will help with practical guidance.`,
       },
     ])
   }, [tripContext?.destination])
@@ -33,10 +35,10 @@ export default function ChatBot({ tripContext = null }) {
     setMessages(nextMessages)
     setLoading(true)
     try {
-      const res = await aiService.chat(userMsg, tripContext, nextMessages)
+      const res = await aiService.chat(userMsg, compactTripContext(tripContext), nextMessages)
       setMessages(prev => [...prev, { role: 'assistant', content: res?.data?.response || 'No response received.' }])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Local assistant is temporarily unavailable. Please try again.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Assistant is temporarily unavailable. Please try again.' }])
     } finally {
       setLoading(false)
     }
@@ -57,7 +59,7 @@ export default function ChatBot({ tripContext = null }) {
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-slate-950 rounded-t-2xl">
             <div className="flex items-center gap-2 text-white">
               <Bot className="w-5 h-5" />
-              <span className="font-semibold text-sm">Offline Travel Assistant</span>
+              <span className="font-semibold text-sm">Travel Assistant</span>
               <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
             </div>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white">
@@ -67,7 +69,7 @@ export default function ChatBot({ tripContext = null }) {
 
           <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-end">
             <button
-              onClick={() => navigate('/assistant')}
+              onClick={() => navigate('/assistant', { state: { tripId: tripContext?.id } })}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700"
             >
               <Sparkles className="w-3.5 h-3.5" /> Open Full Assistant
@@ -87,17 +89,17 @@ export default function ChatBot({ tripContext = null }) {
                     ? 'bg-primary-600 text-white rounded-tr-none'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
                 }`}>
-                  {msg.content}
+                  <MessageBody text={msg.content} />
                 </div>
               </div>
             ))}
             {loading && (
               <div className="flex items-start gap-2">
                 <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-gray-600" />
+                  <Bot className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </div>
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-tl-none px-3.5 py-3 text-sm text-gray-600 dark:text-gray-300">
-                  Thinking locally...
+                  Thinking...
                 </div>
               </div>
             )}

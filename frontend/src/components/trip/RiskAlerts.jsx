@@ -14,7 +14,7 @@ export default function RiskAlerts({ riskData }) {
       <div className="card">
         <div className="flex items-center gap-2 text-emerald-600 py-2">
           <Shield className="w-5 h-5" />
-          <span className="text-sm font-medium">No major risks identified for this trip.</span>
+          <span className="text-sm font-medium dark:text-emerald-300">No major risks identified for this trip.</span>
         </div>
       </div>
     )
@@ -48,19 +48,19 @@ export default function RiskAlerts({ riskData }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{alert.title}</h4>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge}`}>{alert.risk_level}</span>
-                  <span className="text-xs text-gray-500">{alert.category}</span>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">{alert.category}</span>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-300">{alert.weather_condition}</p>
                 <p className="text-sm text-gray-700 dark:text-gray-200">
                   <span className="font-semibold">Suggestion:</span> {alert.smart_suggestion}
                 </p>
                 {alert.timing && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     Best timing: {alert.timing}
                   </p>
                 )}
                 {alert.alternative && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
                     Alternative: {alert.alternative}
                   </p>
                 )}

@@ -263,6 +263,47 @@ export default function TransportCard({ trip }) {
             <ResolutionNote label="Destination lookup" resolution={metadata.destination_resolution} />
           </div>
         )}
+
+        {/* Multi-provider Flight & Hotel Comparison Engine */}
+        <div className="mt-6 border-t border-slate-200 pt-5 dark:border-white/10">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+            Compare Live Fares Across Top Travel Portals
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2.5">
+            <a
+              href={`https://www.google.com/travel/flights?q=flights%20from%20${encodeURIComponent(origin || '')}%20to%20${encodeURIComponent(destination || '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-bold text-sky-800 transition hover:bg-sky-100 dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-200"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Google Flights
+            </a>
+            <a
+              href={`https://www.skyscanner.com/transport/flights/${encodeURIComponent(origin || '')}/${encodeURIComponent(destination || '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-100 dark:border-teal-400/20 dark:bg-teal-400/10 dark:text-teal-200"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Skyscanner
+            </a>
+            <a
+              href={`https://www.kayak.com/flights/${encodeURIComponent(origin || '')}-${encodeURIComponent(destination || '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3.5 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 dark:border-orange-400/20 dark:bg-orange-400/10 dark:text-orange-200"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Kayak
+            </a>
+            <a
+              href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination || '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-800 transition hover:bg-blue-100 dark:border-blue-400/20 dark:bg-blue-400/10 dark:text-blue-200"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Booking.com Stays
+            </a>
+          </div>
+        </div>
       </section>
 
       {loading ? (

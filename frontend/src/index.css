@@ -3,35 +3,68 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+    --toast-bg: #ffffff;
+    --toast-color: #0f172a;
+    --toast-border: #e2e8f0;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+    --toast-bg: #111c2d;
+    --toast-color: #f1f5f9;
+    --toast-border: #334155;
+  }
+
   * {
     box-sizing: border-box;
   }
 
   html {
     scroll-behavior: smooth;
+    background-color: #f8fafc;
+  }
+
+  html.dark {
+    background-color: #080f1b;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:ring-cyan-400 dark:ring-offset-gray-950;
   }
 
   body {
     font-family: 'Manrope', sans-serif;
-    @apply antialiased bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-slate-100;
+    @apply antialiased bg-slate-50 text-slate-900 dark:bg-[#080f1b] dark:text-slate-100;
+    font-feature-settings: 'ss01' on;
+    min-width: 320px;
+  }
+
+  button, input, textarea, select {
+    font: inherit;
+  }
+
+  ::selection {
+    @apply bg-cyan-200 text-slate-900 dark:bg-cyan-400/30 dark:text-white;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-sky-900/10;
   }
 
   .btn-secondary {
-    @apply bg-white/90 dark:bg-gray-900/80 border border-slate-200 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-95;
+    @apply bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-100 font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-[0.98];
   }
 
   .card {
-    @apply bg-white/90 dark:bg-gray-900/80 rounded-[1.75rem] shadow-sm border border-slate-200/80 dark:border-gray-800 p-6 backdrop-blur-sm;
+    @apply bg-white/90 dark:bg-slate-900/80 rounded-[1.5rem] shadow-[0_10px_30px_rgba(15,23,42,0.035)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.18)] border border-slate-200/70 dark:border-slate-700/60 p-6 backdrop-blur-sm transition-shadow duration-200;
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-900 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
   }
 
   .label {
@@ -39,7 +72,7 @@
   }
 
   .page-shell {
-    @apply min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.88),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(186,230,253,0.34),transparent_24%),linear-gradient(180deg,#f8fbff_0%,#eef5ff_40%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_24%),linear-gradient(180deg,#08111f_0%,#0f172a_44%,#111827_100%)];
+    @apply min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(255,255,255,0.95),transparent_30%),radial-gradient(circle_at_92%_80%,rgba(186,230,253,0.28),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f2f7fc_48%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_92%_80%,rgba(16,185,129,0.08),transparent_26%),linear-gradient(180deg,#080f1b_0%,#0d1726_52%,#0b1220_100%)];
   }
 
   .page-container {
@@ -47,7 +80,7 @@
   }
 
   .glass-panel {
-    @apply rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-[0_24px_80px_rgba(148,163,184,0.18)] backdrop-blur-xl dark:border-white/10 dark:bg-white/10 dark:shadow-[0_24px_80px_rgba(15,23,42,0.3)];
+    @apply rounded-[2rem] border border-white/80 bg-white/75 p-6 shadow-[0_24px_80px_rgba(148,163,184,0.18)] backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/75 dark:shadow-[0_24px_80px_rgba(0,0,0,0.28)];
   }
 
   .section-kicker {
@@ -55,12 +88,21 @@
   }
 
   .metric-card {
-    @apply rounded-[1.5rem] border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80;
+    @apply rounded-[1.5rem] border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/75;
   }
 
   .badge-low { @apply bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400; }
   .badge-medium { @apply bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400; }
   .badge-high { @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Leaflet map fix inside containers */
@@ -69,4 +111,12 @@
   width: 100%;
   border-radius: 1rem;
   z-index: 0;
+}
+
+.dark .leaflet-container {
+  background: #0b1220;
+}
+
+.dark .leaflet-tile {
+  filter: brightness(0.72) invert(0.88) hue-rotate(180deg) saturate(0.72) contrast(0.88);
 }

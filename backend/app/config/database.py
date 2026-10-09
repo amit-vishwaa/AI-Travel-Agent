@@ -1,23 +1,46 @@
 """
 Database configuration and connection management.
 Uses Motor (async MongoDB driver) for non-blocking operations.
+Supports local MongoDB and MongoDB Atlas (cloud).
 """
 from __future__ import annotations
 
+import logging
 from motor.motor_asyncio import AsyncIOMotorClient
-
 from app.config.settings import settings
 
-client: AsyncIOMotorClient = None
+logger = logging.getLogger("uvicorn.error")
+
+client: AsyncIOMotorClient | None = None
+
+
+def get_client() -> AsyncIOMotorClient:
+    """Lazily initialize or return the Motor client."""
+    global client
+    if client is None:
+        client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+        )
+    return client
 
 
 async def connect_to_mongo():
-    """Create database connection on startup."""
+    """Create database connection and ensure indices on startup."""
     global client
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
-    db = client[settings.DATABASE_NAME]
-    await db["trips"].create_index([("user_id", 1), ("created_at", -1)])
-    print(f"Connected to MongoDB: {settings.DATABASE_NAME}")
+    try:
+        client = get_client()
+        db = client[settings.DATABASE_NAME]
+        # Ping with timeout to verify connectivity
+        await client.admin.command("ping")
+        await db["trips"].create_index([("user_id", 1), ("created_at", -1)])
+        await db["users"].create_index([("email", 1)], unique=True)
+        logger.info(f"Connected to MongoDB: {settings.DATABASE_NAME}")
+    except Exception as exc:
+        logger.warning(
+            f"MongoDB connection notice: {exc}. Server will start and retry connections on demand."
+        )
 
 
 async def close_mongo_connection():
@@ -25,9 +48,11 @@ async def close_mongo_connection():
     global client
     if client:
         client.close()
-        print("MongoDB connection closed")
+        client = None
+        logger.info("MongoDB connection closed")
 
 
 def get_database():
     """Return the database instance."""
-    return client[settings.DATABASE_NAME]
+    motor_client = get_client()
+    return motor_client[settings.DATABASE_NAME]

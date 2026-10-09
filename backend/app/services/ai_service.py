@@ -61,7 +61,8 @@ async def _call_gemini_model(*, model: str, system_prompt: str, user_prompt: str
     if not settings.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not configured")
 
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    clean_model = model.replace("models/", "").strip()
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent"
     payload = {
         "system_instruction": {
             "parts": [{"text": system_prompt}],

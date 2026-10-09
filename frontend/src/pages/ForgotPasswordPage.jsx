@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="page-shell flex items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-10 text-white shadow-[0_24px_80px_rgba(249,115,22,0.25)] lg:block">
+        <div className="hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-10 text-white shadow-[0_24px_80px_rgba(249,115,22,0.25)] dark:border-slate-700/70 dark:from-slate-900 dark:via-orange-950 dark:to-slate-900 dark:shadow-[0_24px_80px_rgba(0,0,0,0.3)] lg:block">
           <AeroMindLogo className="h-14 w-14" withWordmark={false} />
           <p className="mt-8 text-sm font-semibold uppercase tracking-[0.3em] text-orange-100">Password Reset</p>
           <h1 className="mt-3 text-4xl font-bold leading-tight">Set a fresh password and get back to planning.</h1>

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     AI_TIMEOUT_SECONDS: int = 18
     SERPAPI_TIMEOUT_SECONDS: int = 30
     CACHE_TTL_SECONDS: int = 900
+    FRONTEND_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     model_config = SettingsConfigDict(env_file=str(BACKEND_DIR / ".env"))
 

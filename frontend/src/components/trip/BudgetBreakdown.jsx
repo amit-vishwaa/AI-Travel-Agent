@@ -1,14 +1,16 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { DollarSign, TrendingUp } from 'lucide-react'
 import { formatCurrency } from '../../utils/currency'
+import { useTheme } from '../../context/ThemeContext'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4']
 
 export default function BudgetBreakdown({ budget }) {
+  const { isDark } = useTheme()
   if (!budget || budget.error) {
     return (
       <div className="card">
-        <p className="text-gray-400 text-sm text-center py-4">Budget data unavailable</p>
+        <p className="text-gray-400 dark:text-slate-400 text-sm text-center py-4">Budget data unavailable</p>
       </div>
     )
   }
@@ -19,7 +21,7 @@ export default function BudgetBreakdown({ budget }) {
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           { label: 'Total Budget', value: formatCurrency(total_budget, currency) },
           { label: 'Per Person', value: formatCurrency(per_person_budget, currency) },
@@ -27,7 +29,7 @@ export default function BudgetBreakdown({ budget }) {
         ].map(s => (
           <div key={s.label} className="card text-center">
             <p className="text-xl font-bold text-primary-600 dark:text-primary-400">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{s.label}</p>
           </div>
         ))}
       </div>
@@ -35,7 +37,7 @@ export default function BudgetBreakdown({ budget }) {
       {/* Pie chart */}
       <div className="card">
         <h3 className="font-bold text-base mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-green-500" /> Budget Allocation
+          <DollarSign className="w-5 h-5 text-green-500 dark:text-emerald-300" /> Budget Allocation
         </h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -46,8 +48,19 @@ export default function BudgetBreakdown({ budget }) {
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(val) => formatCurrency(val, currency)} />
-              <Legend />
+              <Tooltip
+                formatter={(val) => formatCurrency(val, currency)}
+                contentStyle={{
+                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                  borderRadius: '14px',
+                  color: isDark ? '#f8fafc' : '#0f172a',
+                  boxShadow: isDark ? '0 12px 30px rgba(0,0,0,.3)' : '0 12px 30px rgba(15,23,42,.12)',
+                }}
+                itemStyle={{ color: isDark ? '#e2e8f0' : '#334155' }}
+                labelStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
+              />
+              <Legend wrapperStyle={{ color: isDark ? '#cbd5e1' : '#475569' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -67,7 +80,7 @@ export default function BudgetBreakdown({ budget }) {
                 <div className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${cat.percentage}%`, backgroundColor: COLORS[i % COLORS.length] }} />
               </div>
-              {cat.tips && <p className="text-xs text-gray-400 mt-1">💡 {cat.tips}</p>}
+              {cat.tips && <p className="text-xs text-gray-400 dark:text-slate-400 mt-1">💡 {cat.tips}</p>}
             </div>
           ))}
         </div>

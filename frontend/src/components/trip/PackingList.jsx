@@ -62,7 +62,7 @@ export default function PackingList({ packingList, onSave, onRegenerate, saving 
           <h3 className="font-bold text-lg flex items-center gap-2">
             <Backpack className="w-5 h-5 text-orange-500" /> AI Packing List
           </h3>
-          <p className="text-sm text-gray-500 mt-1">Generated from destination, weather, and trip type. You can edit, remove, or add your own items.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Generated from destination, weather, and trip type. You can edit, remove, or add your own items.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -100,7 +100,7 @@ export default function PackingList({ packingList, onSave, onRegenerate, saving 
           <div key={category} className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 capitalize">{category}</h4>
-              <span className="text-xs text-gray-400">{(draft[category] || []).length} items</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500">{(draft[category] || []).length} items</span>
             </div>
 
             <div className="space-y-2 mb-3">
