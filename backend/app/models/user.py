@@ -18,10 +18,19 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str = Field(..., min_length=6)
 
+class GoogleAuthRequest(BaseModel):
+    credential: Optional[str] = None
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    google_id: Optional[str] = None
+
 class UserResponse(BaseModel):
     id: str
     name: str
     email: str
+    avatar_url: Optional[str] = None
+    auth_provider: Optional[str] = "local"
     created_at: datetime
 
     class Config:
@@ -39,5 +48,8 @@ class UserInDB(BaseModel):
     id: Optional[str] = None
     name: str
     email: str
-    hashed_password: str
+    hashed_password: Optional[str] = None
+    auth_provider: Optional[str] = "local"
+    avatar_url: Optional[str] = None
+    google_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
