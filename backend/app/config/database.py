@@ -6,6 +6,7 @@ Supports local MongoDB and MongoDB Atlas (cloud).
 from __future__ import annotations
 
 import logging
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
 
@@ -18,10 +19,20 @@ def get_client() -> AsyncIOMotorClient:
     """Lazily initialize or return the Motor client."""
     global client
     if client is None:
+        client_kwargs = {
+            "serverSelectionTimeoutMS": 5000,
+            "connectTimeoutMS": 5000,
+        }
+        # MongoDB Atlas clusters use TLS/SSL - certifi ensures root certificates resolve on all platforms
+        if "mongodb+srv" in settings.MONGODB_URL or "mongodb.net" in settings.MONGODB_URL or "tls=true" in settings.MONGODB_URL.lower():
+            try:
+                client_kwargs["tlsCAFile"] = certifi.where()
+            except Exception as e:
+                logger.warning(f"Failed to set tlsCAFile from certifi: {e}")
+
         client = AsyncIOMotorClient(
             settings.MONGODB_URL,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
+            **client_kwargs
         )
     return client
 

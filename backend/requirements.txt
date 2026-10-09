@@ -11,3 +11,5 @@ httpx
 google-genai
 python-multipart
 reportlab
+dnspython
+certifi

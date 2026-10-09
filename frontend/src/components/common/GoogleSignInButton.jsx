@@ -1,46 +1,44 @@
 import { useState } from 'react'
-import { Loader2, Mail, Shield, Sparkles, X } from 'lucide-react'
+import { Loader2, Shield, Sparkles, X, ExternalLink, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth, getAuthErrorMessage } from '../../context/AuthContext'
+import { signInWithGoogleFirebase, isFirebaseConfigured } from '../../config/firebase'
 
 export default function GoogleSignInButton({ onSuccess, text = 'Continue with Google' }) {
   const { loginWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [showSetupGuide, setShowSetupGuide] = useState(false)
   const [customGoogleEmail, setCustomGoogleEmail] = useState('')
   const [customGoogleName, setCustomGoogleName] = useState('')
 
   const handleGoogleClick = async () => {
-    // If standard Google Client ID is configured in Vite environment
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-
-    if (clientId && window.google?.accounts?.id) {
+    // If Firebase is configured with real credentials, launch Firebase Google popup directly
+    if (isFirebaseConfigured) {
       setLoading(true)
       try {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: async (response) => {
-            try {
-              await loginWithGoogle({ credential: response.credential })
-              toast.success('Signed in with Google!')
-              if (onSuccess) onSuccess()
-            } catch (err) {
-              toast.error(getAuthErrorMessage(err, 'Google sign-in failed'))
-            } finally {
-              setLoading(false)
-            }
-          },
-        })
-        window.google.accounts.id.prompt()
-        return
+        const firebaseUserData = await signInWithGoogleFirebase()
+        await loginWithGoogle(firebaseUserData)
+        toast.success(`Welcome, ${firebaseUserData.name || 'Traveler'}! Signed in with Google.`)
+        if (onSuccess) onSuccess()
       } catch (err) {
+        // Don't show disruptive error if user merely closed the popup
+        if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+          // Closed by user, no error needed
+        } else if (err.code === 'auth/unauthorized-domain') {
+          toast.error('Firebase Auth: Please add localhost to Authorized Domains in Firebase Console.')
+          setShowModal(true)
+        } else {
+          toast.error(getAuthErrorMessage(err, 'Firebase Google sign-in failed'))
+        }
+      } finally {
         setLoading(false)
-        setShowModal(true)
       }
-    } else {
-      // Open fast 1-click Google dialog
-      setShowModal(true)
+      return
     }
+
+    // If Firebase keys aren't set in .env yet, open the fast 1-click selector & setup guide
+    setShowModal(true)
   }
 
   const handleSimulatedGoogleAuth = async (presetName, presetEmail) => {
@@ -58,7 +56,7 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
         email,
         name,
         picture: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
-        google_id: `g_${Math.random().toString(36).substring(2, 11)}`,
+        google_id: `firebase_g_${Math.random().toString(36).substring(2, 11)}`,
       })
       toast.success(`Welcome, ${name.split(' ')[0]}! Signed in with Google.`)
       setShowModal(false)
@@ -101,9 +99,14 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
           </svg>
         )}
         <span>{text}</span>
+        {isFirebaseConfigured && (
+          <span className="ml-1 inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+            Firebase
+          </span>
+        )}
       </button>
 
-      {/* Interactive Google Sign-In Selector Modal */}
+      {/* Interactive Google Sign-In Selector / Firebase Setup Helper Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
           <div className="card relative w-full max-w-md border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -130,11 +133,38 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
               </div>
             </div>
 
-            <div className="mt-5 space-y-2.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Quick 1-Click Profiles</p>
+            {/* Firebase notice banner */}
+            {!isFirebaseConfigured && (
+              <div className="mt-3.5 rounded-xl border border-amber-200/60 bg-amber-50/80 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-950/30">
+                <div className="flex items-center justify-between text-amber-900 dark:text-amber-200 font-medium">
+                  <span>Firebase Auth is ready</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowSetupGuide(!showSetupGuide)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 underline dark:text-amber-300"
+                  >
+                    {showSetupGuide ? 'Hide Guide' : 'Setup Keys'}
+                  </button>
+                </div>
+                {showSetupGuide ? (
+                  <div className="mt-2 space-y-1 text-[11px] text-amber-800 dark:text-amber-300/90">
+                    <p>1. Open <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="underline font-semibold">Firebase Console</a> and add a Web app.</p>
+                    <p>2. Enable <strong>Google</strong> under Authentication &gt; Sign-in method.</p>
+                    <p>3. Add your keys to <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">frontend/.env</code>.</p>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-[11px] text-amber-700/90 dark:text-amber-300/80">
+                    You can test with 1-click accounts below now, or configure your Firebase keys in <code className="bg-amber-100/80 dark:bg-amber-900/40 px-1 py-0.5 rounded">frontend/.env</code>.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">1-Click Google Profiles</p>
               {[
                 { name: 'Amit Vishwakarma', email: 'amit.traveler@gmail.com' },
-                { name: 'Alex Wanderer', email: 'alex.explorer@gmail.com' },
+                { name: 'Alex Explorer', email: 'alex.explorer@gmail.com' },
               ].map(acc => (
                 <button
                   key={acc.email}
@@ -157,7 +187,7 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
               ))}
             </div>
 
-            <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <div className="mt-4 border-t border-slate-100 pt-3.5 dark:border-slate-800">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Or use your Google email</p>
               <div className="mt-2 space-y-2">
                 <input

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import httpx
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
+from jose import jwt
 from pymongo.errors import PyMongoError
 
 from app.config.database import get_database
@@ -156,6 +157,7 @@ async def google_auth(payload: GoogleAuthRequest):
     google_id = None
 
     if payload.credential:
+        # First attempt: Google OAuth2 tokeninfo endpoint
         try:
             async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.get(
@@ -169,8 +171,18 @@ async def google_auth(payload: GoogleAuthRequest):
                     picture = data.get("picture")
                     google_id = data.get("sub")
         except Exception:
-            # Continue to fallback if Google verification network is offline
             pass
+
+        # Second attempt: Firebase / Google JWT claims decoding
+        if not email:
+            try:
+                claims = jwt.get_unverified_claims(payload.credential)
+                email = claims.get("email")
+                name = claims.get("name")
+                picture = claims.get("picture")
+                google_id = claims.get("sub") or claims.get("user_id")
+            except Exception:
+                pass
 
     # Fallback to direct client payload if token verification was already performed or in test/demo mode
     email = email or payload.email

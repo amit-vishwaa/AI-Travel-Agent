@@ -20,6 +20,7 @@ export default defineConfig({
           'vendor-map': ['leaflet', 'react-leaflet'],
           'vendor-charts': ['recharts'],
           'vendor-motion': ['framer-motion'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth'],
         }
       }
     },
