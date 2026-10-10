@@ -7,12 +7,26 @@ from __future__ import annotations
 
 import logging
 import certifi
+import re
+import urllib.parse
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
 
 logger = logging.getLogger("uvicorn.error")
 
 client: AsyncIOMotorClient | None = None
+
+
+def sanitize_mongodb_url(raw_url: str) -> str:
+    """Ensure username and password in MongoDB URL are RFC 3986 encoded."""
+    raw_url = raw_url.strip()
+    match = re.match(r'^(mongodb(?:\+srv)?:\/\/)([^:]+):(.+)@([^@\/]+)(.*)$', raw_url)
+    if match:
+        prefix, user, pwd, host, rest = match.groups()
+        encoded_pwd = urllib.parse.quote_plus(urllib.parse.unquote_plus(pwd))
+        encoded_user = urllib.parse.quote_plus(urllib.parse.unquote_plus(user))
+        return f"{prefix}{encoded_user}:{encoded_pwd}@{host}{rest}"
+    return raw_url
 
 
 def resolve_mongo_url() -> tuple[str, bool]:
@@ -31,7 +45,7 @@ def resolve_mongo_url() -> tuple[str, bool]:
             "Falling back to local MongoDB mongodb://localhost:27017."
         )
         return "mongodb://localhost:27017", True
-    return raw_url, False
+    return sanitize_mongodb_url(raw_url), False
 
 
 def get_client() -> AsyncIOMotorClient:
