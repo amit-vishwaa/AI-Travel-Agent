@@ -109,7 +109,7 @@ export default function Navbar() {
               )}
             </div>
 
-            <Link to="/" className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
+            <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
               <AeroMindLogo className="h-10 w-10" withWordmark={false} />
               <div className="hidden sm:block">
                 <div className="font-['Space_Grotesk'] text-[1.35rem] font-bold leading-none text-slate-900 dark:text-white">
