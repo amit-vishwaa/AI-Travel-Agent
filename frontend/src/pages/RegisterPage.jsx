@@ -61,17 +61,6 @@ export default function RegisterPage() {
   const passwordsMismatch = form.confirm.length > 0 && form.password !== form.confirm
 
   const handlePostAuthRedirect = () => {
-    const prompt = location.state?.prompt || takeAssistantPrompt()
-    const from = location.state?.from
-    if (prompt) {
-      stashAssistantPrompt(prompt)
-      navigate('/assistant', { replace: true, state: { prompt } })
-      return
-    }
-    if (from?.pathname && from.pathname !== '/register') {
-      navigate(from.pathname + (from.search || ''), { replace: true, state: from.state })
-      return
-    }
     navigate('/dashboard', { replace: true })
   }
 
@@ -213,6 +202,7 @@ export default function RegisterPage() {
                   type="text"
                   className="input-field pl-10"
                   placeholder="e.g. Amit Sharma"
+                  autoComplete="name"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   required
@@ -230,6 +220,7 @@ export default function RegisterPage() {
                   type="email"
                   className="input-field pl-10"
                   placeholder="name@example.com"
+                  autoComplete="email"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   required
@@ -246,6 +237,7 @@ export default function RegisterPage() {
                   type={showPwd ? 'text' : 'password'}
                   className="input-field pl-10 pr-10"
                   placeholder="At least 6 characters"
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   required
@@ -321,6 +313,7 @@ export default function RegisterPage() {
                     passwordsMismatch ? 'border-rose-300 focus:ring-rose-400' : ''
                   }`}
                   placeholder="Re-enter password"
+                  autoComplete="new-password"
                   value={form.confirm}
                   onChange={e => setForm({ ...form, confirm: e.target.value })}
                   required

@@ -33,14 +33,8 @@ export default function LoginPage() {
   }
 
   const handlePostAuthRedirect = () => {
-    const prompt = location.state?.prompt || takeAssistantPrompt()
     const from = location.state?.from
-    if (prompt) {
-      stashAssistantPrompt(prompt)
-      navigate('/assistant', { replace: true, state: { prompt } })
-      return
-    }
-    if (from?.pathname && from.pathname !== '/login') {
+    if (from?.pathname && !['/login', '/register', '/'].includes(from.pathname)) {
       navigate(from.pathname + (from.search || ''), { replace: true, state: from.state })
       return
     }
@@ -159,6 +153,7 @@ export default function LoginPage() {
                   type="email"
                   className="input-field pl-10"
                   placeholder="name@example.com"
+                  autoComplete="email"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   required
@@ -179,6 +174,7 @@ export default function LoginPage() {
                   type={showPwd ? 'text' : 'password'}
                   className="input-field pl-10 pr-10"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   required

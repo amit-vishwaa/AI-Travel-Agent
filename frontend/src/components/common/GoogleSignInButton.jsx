@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, Shield, Sparkles, X, ExternalLink, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth, getAuthErrorMessage } from '../../context/AuthContext'
@@ -6,11 +7,20 @@ import { signInWithGoogleFirebase, isFirebaseConfigured } from '../../config/fir
 
 export default function GoogleSignInButton({ onSuccess, text = 'Continue with Google' }) {
   const { loginWithGoogle } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showSetupGuide, setShowSetupGuide] = useState(false)
   const [customGoogleEmail, setCustomGoogleEmail] = useState('')
   const [customGoogleName, setCustomGoogleName] = useState('')
+
+  const handleSuccessRedirect = () => {
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      navigate('/dashboard', { replace: true })
+    }
+  }
 
   const handleGoogleClick = async () => {
     // If Firebase is configured with real credentials, launch Firebase Google popup directly
@@ -20,13 +30,16 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
         const firebaseUserData = await signInWithGoogleFirebase()
         await loginWithGoogle(firebaseUserData)
         toast.success(`Welcome, ${firebaseUserData.name || 'Traveler'}! Signed in with Google.`)
-        if (onSuccess) onSuccess()
+        handleSuccessRedirect()
       } catch (err) {
         // Don't show disruptive error if user merely closed the popup
         if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-          // Closed by user, no error needed
+          toast('Google sign-in window closed', { icon: 'ℹ️' })
         } else if (err.code === 'auth/unauthorized-domain') {
           toast.error('Firebase Auth: Please add localhost to Authorized Domains in Firebase Console.')
+          setShowModal(true)
+        } else if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/configuration-not-found') {
+          toast.error('Google provider is not enabled in Firebase Console. Please enable it in Firebase Console > Authentication > Sign-in method.')
           setShowModal(true)
         } else {
           toast.error(getAuthErrorMessage(err, 'Firebase Google sign-in failed'))
@@ -60,7 +73,7 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
       })
       toast.success(`Welcome, ${name.split(' ')[0]}! Signed in with Google.`)
       setShowModal(false)
-      if (onSuccess) onSuccess()
+      handleSuccessRedirect()
     } catch (err) {
       toast.error(getAuthErrorMessage(err, 'Google authentication failed'))
     } finally {

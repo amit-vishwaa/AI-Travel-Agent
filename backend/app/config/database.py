@@ -15,23 +15,43 @@ logger = logging.getLogger("uvicorn.error")
 client: AsyncIOMotorClient | None = None
 
 
+def resolve_mongo_url() -> tuple[str, bool]:
+    """Resolve the MongoDB connection URL, detecting placeholder passwords."""
+    raw_url = settings.MONGODB_URL.strip()
+    is_placeholder = (
+        "<db_password>" in raw_url
+        or "<password>" in raw_url
+        or "<user>" in raw_url
+        or "<username>" in raw_url
+    )
+    if is_placeholder:
+        logger.warning(
+            "MONGODB_URL in backend/.env contains placeholder '<db_password>'. "
+            "Please replace it with your real MongoDB Atlas password. "
+            "Falling back to local MongoDB mongodb://localhost:27017."
+        )
+        return "mongodb://localhost:27017", True
+    return raw_url, False
+
+
 def get_client() -> AsyncIOMotorClient:
     """Lazily initialize or return the Motor client."""
     global client
     if client is None:
+        url, _ = resolve_mongo_url()
         client_kwargs = {
             "serverSelectionTimeoutMS": 5000,
             "connectTimeoutMS": 5000,
         }
         # MongoDB Atlas clusters use TLS/SSL - certifi ensures root certificates resolve on all platforms
-        if "mongodb+srv" in settings.MONGODB_URL or "mongodb.net" in settings.MONGODB_URL or "tls=true" in settings.MONGODB_URL.lower():
+        if "mongodb+srv" in url or "mongodb.net" in url or "tls=true" in url.lower():
             try:
                 client_kwargs["tlsCAFile"] = certifi.where()
             except Exception as e:
                 logger.warning(f"Failed to set tlsCAFile from certifi: {e}")
 
         client = AsyncIOMotorClient(
-            settings.MONGODB_URL,
+            url,
             **client_kwargs
         )
     return client
@@ -47,7 +67,11 @@ async def connect_to_mongo():
         await client.admin.command("ping")
         await db["trips"].create_index([("user_id", 1), ("created_at", -1)])
         await db["users"].create_index([("email", 1)], unique=True)
-        logger.info(f"Connected to MongoDB: {settings.DATABASE_NAME}")
+        url, fell_back = resolve_mongo_url()
+        if fell_back:
+            logger.info("Connected to local MongoDB (ai_travel_agent) as fallback for Atlas placeholder.")
+        else:
+            logger.info(f"Connected to MongoDB: {settings.DATABASE_NAME}")
     except Exception as exc:
         logger.warning(
             f"MongoDB connection notice: {exc}. Server will start and retry connections on demand."

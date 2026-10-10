@@ -29,6 +29,14 @@ from app.services.auth import (
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def format_db_error(exc: Exception) -> str:
+    """Format MongoDB errors into actionable, clear instructions."""
+    err_msg = str(exc).lower()
+    if "bad auth" in err_msg or "authentication failed" in err_msg or "<db_password>" in settings.MONGODB_URL:
+        return "MongoDB Atlas authentication failed. Please update backend/.env with your real database password (replace '<db_password>')."
+    return "Database service is unavailable. Please verify MongoDB is running or configure MONGODB_URL in backend/.env."
+
+
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate):
     """Register a new user account with secure password hashing and normalized email."""
@@ -45,10 +53,10 @@ async def register(user_data: UserCreate):
     # Check if email already exists (case-insensitive check)
     try:
         existing = await db["users"].find_one({"email": clean_email})
-    except PyMongoError:
+    except PyMongoError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database service is unavailable. Please verify MongoDB is running or configure MONGODB_URL in backend/.env."
+            detail=format_db_error(exc)
         )
 
     if existing:
@@ -100,10 +108,10 @@ async def login(credentials: UserLogin):
 
     try:
         user = await db["users"].find_one({"email": clean_email})
-    except PyMongoError:
+    except PyMongoError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database service is unavailable. Please verify MongoDB is running or configure MONGODB_URL in backend/.env."
+            detail=format_db_error(exc)
         )
     if not user:
         raise HTTPException(
@@ -227,10 +235,10 @@ async def google_auth(payload: GoogleAuthRequest):
                 updates["google_id"] = google_id
             if updates:
                 await db["users"].update_one({"_id": user["_id"]}, {"$set": updates})
-    except PyMongoError:
+    except PyMongoError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database service is unavailable during Google sign-in. Please ensure MongoDB is running."
+            detail=format_db_error(exc)
         )
 
     token = create_access_token(
