@@ -3,8 +3,18 @@
  */
 import axios from 'axios'
 
+function getBaseUrl() {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+  }
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return '/api'
+  }
+  return import.meta.env.DEV ? '/api' : 'http://localhost:8000/api'
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api'),
+  baseURL: getBaseUrl(),
   timeout: 60000, // 60s for AI calls
   headers: { 'Content-Type': 'application/json' }
 })

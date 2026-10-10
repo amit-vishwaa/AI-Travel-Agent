@@ -6,16 +6,16 @@ import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY?.trim() || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim() || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID?.trim() || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY?.trim() || 'AIzaSyBBglK3UXtYok6fcJTsL-e2Rk-SMtCdWYs',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || 'aitravelagent-27ad0.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim() || 'aitravelagent-27ad0',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || 'aitravelagent-27ad0.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || '376024911834',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID?.trim() || '1:376024911834:web:cf0146bb2e6e7eeb847ae3',
 }
 
 /**
- * Checks whether valid Firebase credentials have been configured in .env.
+ * Checks whether valid Firebase credentials have been configured.
  */
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&

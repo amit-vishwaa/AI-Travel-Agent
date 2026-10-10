@@ -36,13 +36,15 @@ export default function GoogleSignInButton({ onSuccess, text = 'Continue with Go
         if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
           toast('Google sign-in window closed', { icon: 'ℹ️' })
         } else if (err.code === 'auth/unauthorized-domain') {
-          toast.error('Firebase Auth: Please add localhost to Authorized Domains in Firebase Console.')
+          const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'vercel.app'
+          toast.error(`Firebase: Add "${currentHost}" to Firebase Console > Authentication > Settings > Authorized Domains`, { duration: 8000 })
           setShowModal(true)
         } else if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/configuration-not-found') {
-          toast.error('Google provider is not enabled in Firebase Console. Please enable it in Firebase Console > Authentication > Sign-in method.')
+          toast.error('Google provider is not enabled in Firebase Console. Enable it under Authentication > Sign-in method.', { duration: 8000 })
           setShowModal(true)
         } else {
           toast.error(getAuthErrorMessage(err, 'Firebase Google sign-in failed'))
+          setShowModal(true)
         }
       } finally {
         setLoading(false)
